@@ -1,37 +1,28 @@
-import json
-import os
+# Updated for Render deployment
 import numpy as np
-import faiss
-from sentence_transformers import SentenceTransformer
 
 class Retriever:
     def __init__(self):
-        path = 'app/catalog.json'
-        if not os.path.exists(path):
-            self.catalog = []
-            self.index = None
-            return
-            
-        with open(path, 'r', encoding='utf-8') as f:
-            self.catalog = json.load(f)
-        
-        if not self.catalog:
-            self.index = None
-            return
-
-        self.model = SentenceTransformer('all-MiniLM-L6-v2')
-        self.texts = [f"{c['name']} {c.get('description', '')}" for c in self.catalog]
-        embeddings = self.model.encode(self.texts).astype('float32')
-        
-        if len(embeddings.shape) == 1:
-            embeddings = embeddings.reshape(1, -1)
-
-        self.index = faiss.IndexFlatL2(embeddings.shape[1])
-        self.index.add(embeddings)
+        # Sample catalog - Replace this with your actual SHL test data
+        self.catalog = [
+            {"name": "Occupational Personality Questionnaire (OPQ)", "url": "https://www.shl.com/opq"},
+            {"name": "Verify G+ Ability Test", "url": "https://www.shl.com/verify-g-plus"},
+            {"name": "Senior Java Developer Assessment", "url": "https://www.shl.com/java-test"},
+            {"name": "Management Situational Judgment Test", "url": "https://www.shl.com/sjt"}
+        ]
 
     def search(self, query, top_k=3):
-        if not self.index:
-            return []
-        q_emb = self.model.encode([query]).astype('float32')
-        D, I = self.index.search(q_emb, top_k)
-        return [self.catalog[i] for i in I[0] if i != -1]
+        """Simple keyword-based search to save memory."""
+        query = query.lower()
+        results = []
+        
+        for item in self.catalog:
+            # Check if any words from the query match the test name
+            if any(word in item['name'].lower() for word in query.split()):
+                results.append(item)
+        
+        # If no keywords match, return the first few as defaults for the AI to pick from
+        if not results:
+            return self.catalog[:top_k]
+            
+        return results[:top_k]
